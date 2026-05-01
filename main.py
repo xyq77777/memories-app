@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from datetime import datetime, date
+from typing import Optional
 import uuid
 import random
 import string
@@ -33,6 +34,13 @@ class DBMemory(Base):
     date = Column(Date)
     content = Column(String)
     author = Column(String)
+
+# 【新增】專屬空間資訊模型 (紀錄天數與見面次數)
+class DBRoom(Base):
+    __tablename__ = "rooms"
+    room_id = Column(String, primary_key=True, index=True)
+    start_date = Column(Date, nullable=True)
+    meetup_count = Column(Integer, default=0)
 
 Base.metadata.create_all(bind=engine)
 
@@ -64,13 +72,17 @@ class MemoryCreate(BaseModel):
     date: date
     content: str
 
-# 新增：用於接收修改資料的模型
 class MemoryUpdate(BaseModel):
     date: date
     content: str
 
 class LinkSubmit(BaseModel):
     code: str
+
+# 【新增】用於更新空間資訊的模型
+class RoomUpdate(BaseModel):
+    start_date: Optional[date] = None
+    meetup_count: int
 
 # --- 獲取當前登入使用者 ---
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -86,12 +98,17 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="帳號已存在")
     
+    new_room_id = uuid.uuid4().hex 
     new_user = DBUser(
         username=user.username, 
         hashed_password=get_password_hash(user.password),
-        room_id=uuid.uuid4().hex 
+        room_id=new_room_id
     )
+    # 同時初始化這個人的空間儀表板
+    new_room = DBRoom(room_id=new_room_id, meetup_count=0)
+    
     db.add(new_user)
+    db.add(new_room)
     db.commit()
     return {"msg": "註冊成功！"}
 
@@ -123,31 +140,43 @@ def join_link(data: LinkSubmit, current_user: DBUser = Depends(get_current_user)
     db.commit()
     return {"msg": "綁定成功！"}
 
+# 【新增】取得與更新空間儀表板 API
+@app.get("/room_info")
+def get_room_info(current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    room = db.query(DBRoom).filter(DBRoom.room_id == current_user.room_id).first()
+    if not room:
+        room = DBRoom(room_id=current_user.room_id, meetup_count=0)
+        db.add(room)
+        db.commit()
+    return {"start_date": room.start_date, "meetup_count": room.meetup_count}
+
+@app.put("/room_info")
+def update_room_info(info: RoomUpdate, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    room = db.query(DBRoom).filter(DBRoom.room_id == current_user.room_id).first()
+    if not room:
+        room = DBRoom(room_id=current_user.room_id)
+        db.add(room)
+    room.start_date = info.start_date
+    room.meetup_count = info.meetup_count
+    db.commit()
+    return {"msg": "更新成功"}
+
 @app.post("/memories")
 def create_memory(memory: MemoryCreate, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    new_memory = DBMemory(
-        room_id=current_user.room_id,
-        date=memory.date,
-        content=memory.content,
-        author=current_user.username
-    )
+    new_memory = DBMemory(room_id=current_user.room_id, date=memory.date, content=memory.content, author=current_user.username)
     db.add(new_memory)
     db.commit()
     return {"msg": "紀錄已新增"}
 
 @app.get("/memories")
 def get_memories(current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    memories = db.query(DBMemory).filter(DBMemory.room_id == current_user.room_id).order_by(DBMemory.date.desc()).all()
-    return memories
+    return db.query(DBMemory).filter(DBMemory.room_id == current_user.room_id).order_by(DBMemory.date.desc()).all()
 
-# 【新增】修改紀錄的 API 通道
 @app.put("/memories/{memory_id}")
 def update_memory(memory_id: int, memory: MemoryUpdate, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    # 確保只能修改屬於自己空間的紀錄
     db_memory = db.query(DBMemory).filter(DBMemory.id == memory_id, DBMemory.room_id == current_user.room_id).first()
     if not db_memory:
         raise HTTPException(status_code=404, detail="找不到這筆紀錄")
-    
     db_memory.date = memory.date
     db_memory.content = memory.content
     db.commit()
