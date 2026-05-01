@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我們的專屬回憶</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .fade-in { animation: fadeIn 0.6s ease-out forwards; opacity: 0; transform: translateY(15px); }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-rose-100 via-pink-50 to-purple-100 min-h-screen text-gray-800 antialiased">
+
+    <div class="max-w-lg mx-auto p-5 pt-12 pb-20" id="app-container">
+        
+        <!-- 登入與註冊區塊 -->
+        <div id="auth-section" class="glass-card rounded-3xl shadow-xl p-8 mb-6 mt-10">
+            <div class="text-center mb-8">
+                <div class="inline-block bg-pink-100 p-4 rounded-full text-pink-500 mb-3 shadow-inner">
+                    <i class="fa-solid fa-heart fa-2x animate-pulse"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800" id="auth-title">登入</h1>
+            </div>
+            
+            <form id="auth-form" class="space-y-5">
+                <div class="relative">
+                    <i class="fa-solid fa-user absolute left-4 top-3.5 text-pink-300"></i>
+                    <!-- 加入了自動關閉首字母大寫與自動修正，避免手機輸入干擾 -->
+                    <input type="text" id="username" placeholder="你的帳號" autocapitalize="none" autocomplete="off" class="pl-11 w-full rounded-2xl border-0 bg-white/80 shadow-sm p-3 focus:ring-2 focus:ring-pink-400 outline-none" required>
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-lock absolute left-4 top-3.5 text-pink-300"></i>
+                    <input type="password" id="password" placeholder="密碼" class="pl-11 w-full rounded-2xl border-0 bg-white/80 shadow-sm p-3 focus:ring-2 focus:ring-pink-400 outline-none" required>
+                </div>
+                
+                <!-- 新增：密碼重複確認欄位 (預設隱藏) -->
+                <div id="confirm-password-group" class="hidden relative fade-in">
+                    <i class="fa-solid fa-shield-check absolute left-4 top-3.5 text-pink-300"></i>
+                    <input type="password" id="confirm-password" placeholder="請再次輸入密碼確認" class="pl-11 w-full rounded-2xl border-0 bg-white/80 shadow-sm p-3 focus:ring-2 focus:ring-pink-400 outline-none">
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-3 px-4 rounded-2xl shadow-lg hover:-translate-y-0.5 transition-all">確認送出</button>
+            </form>
+            
+            <div class="mt-6 text-center border-t border-pink-100 pt-4">
+                <button id="toggle-auth" class="text-pink-500 hover:text-pink-700 text-sm font-medium"><i class="fa-solid fa-user-plus mr-1"></i> 還沒有帳號？點此註冊</button>
+            </div>
+        </div>
+
+        <!-- 主畫面區塊 -->
+        <div id="main-section" class="hidden fade-in">
+            <!-- 導航與功能按鈕 -->
+            <div class="flex justify-between items-center mb-6 glass-card py-3 px-5 rounded-2xl shadow-sm">
+                <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
+                    <i class="fa-solid fa-book-open mr-2 text-pink-500"></i>回憶時光機
+                </h1>
+                <div class="space-x-2">
+                    <button onclick="openLinkModal()" class="text-sm bg-pink-100 text-pink-600 hover:bg-pink-200 py-1.5 px-3 rounded-full shadow-sm font-bold transition-all"><i class="fa-solid fa-link"></i> 綁定對象</button>
+                    <button onclick="logout()" class="text-sm bg-white/50 text-gray-600 hover:bg-white py-1.5 px-3 rounded-full shadow-sm"><i class="fa-solid fa-right-from-bracket"></i></button>
+                </div>
+            </div>
+
+            <!-- 新增紀錄表單 -->
+            <div class="glass-card rounded-3xl shadow-md p-6 mb-8 border border-white/60">
+                <h2 class="text-lg font-bold mb-4 text-gray-700"><i class="fa-solid fa-plus text-pink-400 mr-2"></i>寫下新回憶</h2>
+                <form id="memory-form" class="space-y-4">
+                    <input type="date" id="mem-date" class="block w-full rounded-xl border-0 bg-white/90 shadow-inner p-3 text-gray-600 focus:ring-2 focus:ring-pink-300 outline-none" required>
+                    <textarea id="mem-content" rows="3" class="block w-full rounded-xl border-0 bg-white/90 shadow-inner p-3 text-gray-700 focus:ring-2 focus:ring-pink-300 outline-none resize-none" placeholder="今天發生了什麼有趣的事？..." required></textarea>
+                    <button type="submit" class="w-full bg-gradient-to-r from-purple-400 to-pink-400 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all">保存這一天</button>
+                </form>
+            </div>
+
+            <!-- 時間軸 -->
+            <div class="pl-2">
+                <div id="timeline" class="relative border-l-2 border-pink-200 ml-3 md:ml-4 space-y-8 pb-10"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 綁定視窗 (Modal) -->
+    <div id="link-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="glass-card bg-white/90 w-full max-w-sm rounded-3xl p-6 shadow-2xl transform scale-95 transition-transform duration-300" id="link-modal-content">
+            <h3 class="text-xl font-bold mb-4 text-center text-pink-600"><i class="fa-solid fa-user-group mr-2"></i>綁定另一半</h3>
+            
+            <div class="mb-6 bg-pink-50 p-4 rounded-2xl text-center border border-pink-100">
+                <p class="text-sm text-gray-600 mb-2">你的專屬代碼 (請對方輸入)：</p>
+                <div id="my-link-code" class="text-3xl font-mono font-bold text-pink-500 tracking-widest mb-3">------</div>
+                <button onclick="generateLinkCode()" class="text-xs bg-pink-200 hover:bg-pink-300 text-pink-800 py-1.5 px-4 rounded-full shadow-sm"><i class="fa-solid fa-rotate mr-1"></i>產生代碼</button>
+            </div>
+
+            <div class="mb-2">
+                <p class="text-sm text-gray-600 mb-2">或者，輸入對方的代碼：</p>
+                <div class="flex gap-2">
+                    <input type="text" id="partner-code" placeholder="請輸入6碼" maxlength="6" class="uppercase text-center font-mono font-bold text-lg flex-1 rounded-xl border border-pink-200 p-2 outline-none focus:ring-2 focus:ring-pink-400 bg-white">
+                    <button onclick="joinLinkCode()" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-xl font-bold shadow-md">綁定</button>
+                </div>
+            </div>
+            
+            <button onclick="closeLinkModal()" class="w-full text-gray-400 hover:text-gray-600 text-sm mt-4 p-2">關閉視窗</button>
+        </div>
+    </div>
+
+    <script>
+        let isLogin = true;
+        let token = localStorage.getItem('token');
+
+        if (token) {
+            showMain();
+            fetchMemories();
+        }
+
+        // 獨立出一個切換模式的函式
+        function toggleMode() {
+            isLogin = !isLogin;
+            document.getElementById('auth-title').innerText = isLogin ? '登入' : '註冊新帳號';
+            document.getElementById('toggle-auth').innerHTML = isLogin ? '<i class="fa-solid fa-user-plus mr-1"></i> 還沒有帳號？點此註冊' : '<i class="fa-solid fa-arrow-left mr-1"></i> 已有帳號？返回登入';
+            
+            // 控制密碼確認欄位的顯示與必填狀態
+            const confirmGroup = document.getElementById('confirm-password-group');
+            const confirmInput = document.getElementById('confirm-password');
+            if (isLogin) {
+                confirmGroup.classList.add('hidden');
+                confirmInput.required = false;
+            } else {
+                confirmGroup.classList.remove('hidden');
+                confirmInput.required = true;
+            }
+        }
+
+        document.getElementById('toggle-auth').addEventListener('click', toggleMode);
+
+// 送出登入或註冊
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                if (!isLogin) {
+                    // 【註冊邏輯】
+                    const confirmPassword = document.getElementById('confirm-password').value;
+                    
+                    if (password !== confirmPassword) {
+                        alert('兩次輸入的密碼不一樣喔！請再確認一次。');
+                        return;
+                    }
+
+                    const res = await fetch('/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    if (res.ok) {
+                        alert('🎉 註冊成功！系統將自動為您切換到登入畫面。');
+                        document.getElementById('auth-form').reset(); // 清空表單
+                        toggleMode(); // 自動切換回登入模式
+                    } else {
+                        const data = await res.json();
+                        alert(`註冊失敗 ❌\n原因：${data.detail}`);
+                    }
+                } else {
+                    // 【登入邏輯】
+                    const formData = new URLSearchParams();
+                    formData.append('username', username);
+                    formData.append('password', password);
+
+                    const res = await fetch('/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData
+                    });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        localStorage.setItem('token', data.access_token);
+                        token = data.access_token;
+                        showMain();
+                        fetchMemories();
+                    } else {
+                        alert('登入失敗 ❌\n帳號或密碼錯誤哦！請檢查是否輸入正確。');
+                    }
+                }
+            } catch (error) {
+                // 如果發生連線中斷或後端死當，就會跳出這個視窗
+                alert(`糟糕，發生預期外的錯誤！\n詳細狀況：${error.message}\n請確認終端機的伺服器是否有在運行。`);
+                console.error(error);
+            }
+        });
+
+        // ---- 綁定相關邏輯 ----
+        function openLinkModal() {
+            const modal = document.getElementById('link-modal');
+            const content = document.getElementById('link-modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+            document.getElementById('my-link-code').innerText = "------";
+            document.getElementById('partner-code').value = "";
+        }
+
+        function closeLinkModal() {
+            const modal = document.getElementById('link-modal');
+            const content = document.getElementById('link-modal-content');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        async function generateLinkCode() {
+            const res = await fetch('/generate_link', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if(res.ok) {
+                const data = await res.json();
+                document.getElementById('my-link-code').innerText = data.link_code;
+            }
+        }
+
+        async function joinLinkCode() {
+            const code = document.getElementById('partner-code').value.trim();
+            if(!code) return alert("請輸入對方的代碼！");
+            
+            const res = await fetch('/join_link', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ code: code.toUpperCase() })
+            });
+            
+            if(res.ok) {
+                alert("太棒了！綁定成功！你們現在共用同一個回憶空間了！");
+                closeLinkModal();
+                fetchMemories(); // 重新讀取合併後的資料
+            } else {
+                const data = await res.json();
+                alert(data.detail);
+            }
+        }
+
+        // 新增紀錄
+        document.getElementById('memory-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = document.getElementById('mem-date').value;
+            const content = document.getElementById('mem-content').value;
+
+            const res = await fetch('/memories', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ date, content })
+            });
+
+            if (res.ok) {
+                document.getElementById('mem-content').value = '';
+                fetchMemories(); 
+            }
+        });
+
+        // 讀取時間軸
+        async function fetchMemories() {
+            const res = await fetch('/memories', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const memories = await res.json();
+                const timeline = document.getElementById('timeline');
+                timeline.innerHTML = '';
+                
+                if(memories.length === 0) {
+                    timeline.innerHTML = '<p class="text-gray-400 text-center mt-10 text-sm pl-4"><i class="fa-solid fa-seedling mr-2"></i>目前空間還空空的，寫下第一筆紀錄吧！</p>';
+                    return;
+                }
+
+                memories.forEach((mem, index) => {
+                    const div = document.createElement('div');
+                    div.className = `relative pl-8 sm:pl-10 fade-in`;
+                    div.style.animationDelay = `${index * 0.1}s`;
+                    div.innerHTML = `
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-pink-400 border-2 border-white shadow-sm ring-4 ring-pink-50"></div>
+                        <div class="glass-card p-5 rounded-2xl shadow-sm hover:shadow-lg transition-all group">
+                            <div class="flex justify-between items-center border-b border-pink-100/50 pb-3 mb-3">
+                                <span class="text-sm font-bold text-pink-600"><i class="fa-regular fa-calendar-days mr-1.5 opacity-70"></i>${mem.date}</span>
+                                <span class="text-xs bg-white text-pink-600 py-1 px-3 rounded-full shadow-sm border border-pink-100 font-medium">${mem.author}</span>
+                            </div>
+                            <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">${mem.content}</p>
+                        </div>
+                    `;
+                    timeline.appendChild(div);
+                });
+            } else if (res.status === 401) {
+                logout();
+            }
+        }
+
+        function showMain() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('main-section').classList.remove('hidden');
+            document.getElementById('mem-date').valueAsDate = new Date();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            token = null;
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('main-section').classList.add('hidden');
+            document.getElementById('auth-form').reset();
+        }
+    </script>
+</body>
+</html>
