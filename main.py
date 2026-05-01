@@ -3,20 +3,32 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Date
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
 from datetime import datetime, date
 from typing import Optional
 import uuid
 import random
 import string
 import hashlib
+import os
 
-# --- 資料庫設定 (SQLite) ---
-SQLALCHEMY_DATABASE_URL = "sqlite:///./memories.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+# --- 資料庫設定 (智慧切換：雲端 PostgreSQL / 本機 SQLite) ---
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./memories.db")
+
+# 自動修正 Neon 資料庫網址的開頭
+if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
+# 【解決黃色底線】使用最新的 SQLAlchemy 2.0 標準寫法
+class Base(DeclarativeBase):
+    pass
 
 # --- 資料庫模型 ---
 class DBUser(Base):
@@ -35,7 +47,6 @@ class DBMemory(Base):
     content = Column(String)
     author = Column(String)
 
-# 【新增】專屬空間資訊模型 (紀錄天數與見面次數)
 class DBRoom(Base):
     __tablename__ = "rooms"
     room_id = Column(String, primary_key=True, index=True)
@@ -79,7 +90,6 @@ class MemoryUpdate(BaseModel):
 class LinkSubmit(BaseModel):
     code: str
 
-# 【新增】用於更新空間資訊的模型
 class RoomUpdate(BaseModel):
     start_date: Optional[date] = None
     meetup_count: int
@@ -104,7 +114,6 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         hashed_password=get_password_hash(user.password),
         room_id=new_room_id
     )
-    # 同時初始化這個人的空間儀表板
     new_room = DBRoom(room_id=new_room_id, meetup_count=0)
     
     db.add(new_user)
@@ -140,7 +149,6 @@ def join_link(data: LinkSubmit, current_user: DBUser = Depends(get_current_user)
     db.commit()
     return {"msg": "綁定成功！"}
 
-# 【新增】取得與更新空間儀表板 API
 @app.get("/room_info")
 def get_room_info(current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
     room = db.query(DBRoom).filter(DBRoom.room_id == current_user.room_id).first()
