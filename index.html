@@ -52,7 +52,10 @@
                 <button onclick="openRoomSettings()" class="absolute top-3 right-4 text-pink-200 hover:text-pink-500 transition-colors" title="設定紀念日"><i class="fa-solid fa-gear fa-lg"></i></button>
                 
                 <div class="flex items-center gap-4 w-full justify-center md:justify-start pt-2">
-                    <div class="bg-gradient-to-br from-pink-100 to-rose-100 p-4 rounded-full text-pink-500 shadow-inner"><i class="fa-solid fa-calendar-heart fa-2x"></i></div>
+                    <div class="bg-gradient-to-br from-pink-100 to-rose-100 p-4 rounded-full text-pink-500 shadow-inner">
+                        <!-- 這裡換成了絕對不會出錯的 日曆打勾 圖示 -->
+                        <i class="fa-solid fa-calendar-check fa-2x"></i>
+                    </div>
                     <div>
                         <p class="text-xs text-gray-500 font-bold tracking-wide">認識 / 在一起</p>
                         <p class="text-3xl font-black text-pink-600 drop-shadow-sm"><span id="days-count">--</span> <span class="text-sm text-pink-400 font-medium">天</span></p>
@@ -62,7 +65,9 @@
                 <div class="w-full h-px bg-pink-100 md:hidden"></div> <!-- 手機版分隔線 -->
 
                 <div class="flex items-center gap-4 w-full justify-center md:justify-end pb-2">
-                    <div class="bg-gradient-to-br from-purple-100 to-indigo-100 p-4 rounded-full text-purple-500 shadow-inner"><i class="fa-solid fa-face-smile-wink fa-2x"></i></div>
+                    <div class="bg-gradient-to-br from-purple-100 to-indigo-100 p-4 rounded-full text-purple-500 shadow-inner">
+                        <i class="fa-solid fa-face-smile-wink fa-2x"></i>
+                    </div>
                     <div>
                         <p class="text-xs text-gray-500 font-bold tracking-wide">我們見面了</p>
                         <div class="flex items-center gap-3">
