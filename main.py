@@ -65,9 +65,13 @@ def generate_code(): return ''.join(random.choices(string.ascii_uppercase + stri
 
 app = FastAPI(title="Multi-Room Shared Memory API")
 
-# 【終極修復】在伺服器啟動時，強制再次檢查並建立所有表格
+# 【終極修復】在伺服器啟動時，強制拆除並重建表格
 @app.on_event("startup")
 def startup_event():
+    # 加入這行：無情拆除所有舊表格 (猛藥！)
+    Base.metadata.drop_all(bind=engine) 
+    
+    # 原本的這行：重新建立符合最新設計圖的表格
     Base.metadata.create_all(bind=engine)
 
 def get_db():
