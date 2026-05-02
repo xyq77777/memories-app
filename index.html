@@ -107,7 +107,7 @@
 
         if (token) { showLobby(); }
 
-        // --- 登入與註冊 (已新增抓錯代碼) ---
+        // --- 登入與註冊 ---
         function toggleMode() { isLogin = !isLogin; document.getElementById('auth-title').innerText = isLogin ? '登入' : '註冊新帳號'; document.getElementById('toggle-auth').innerHTML = isLogin ? '還沒有帳號？點此註冊' : '已有帳號？返回登入'; const confirmGroup = document.getElementById('confirm-password-group'); const confirmInput = document.getElementById('confirm-password'); if (isLogin) { confirmGroup.classList.add('hidden'); confirmInput.required = false; } else { confirmGroup.classList.remove('hidden'); confirmInput.required = true; } }
         document.getElementById('toggle-auth').addEventListener('click', toggleMode);
         
@@ -121,22 +121,14 @@
                     if (res.ok) { 
                         alert('註冊成功！系統已為您建立個人專屬房間。'); 
                         document.getElementById('auth-form').reset(); toggleMode(); 
-                    } else { 
-                        // 這裡會把後端真正的錯誤抓出來顯示
-                        const data = await res.json(); 
-                        alert('註冊失敗 ❌\n錯誤原因：' + (data.detail || '系統異常')); 
-                    }
-                } catch(error) {
-                    alert('網路或伺服器錯誤 ❌\n詳細資訊：' + error.message);
-                }
+                    } else { const data = await res.json(); alert('註冊失敗 ❌\n錯誤原因：' + (data.detail || '系統異常')); }
+                } catch(error) { alert('網路或伺服器錯誤 ❌\n詳細資訊：' + error.message); }
             } else {
                 const formData = new URLSearchParams(); formData.append('username', username); formData.append('password', password);
                 try {
                     const res = await fetch('/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
                     if (res.ok) { const data = await res.json(); localStorage.setItem('token', data.access_token); token = data.access_token; showLobby(); } else { alert('帳號或密碼錯誤'); }
-                } catch(error) {
-                    alert('網路或伺服器錯誤 ❌\n詳細資訊：' + error.message);
-                }
+                } catch(error) { alert('網路或伺服器錯誤 ❌\n詳細資訊：' + error.message); }
             }
         });
 
@@ -153,8 +145,70 @@
         async function saveRoomInfo(startDate, count) { await fetch(`/room_info/${currentRoomId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ start_date: startDate || null, meetup_count: count }) }); fetchRoomInfo(); }
         function addMeetup() { saveRoomInfo(roomStartDate, roomMeetupCount + 1); }
         document.getElementById('memory-form').addEventListener('submit', async (e) => { e.preventDefault(); const date = document.getElementById('mem-date').value; const content = document.getElementById('mem-content').value; const res = await fetch(`/memories/${currentRoomId}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ date, content }) }); if (res.ok) { document.getElementById('mem-content').value = ''; fetchMemories(); } });
-        async function fetchMemories() { const res = await fetch(`/memories/${currentRoomId}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { currentMemories = await res.json(); const timeline = document.getElementById('timeline'); timeline.innerHTML = ''; if(currentMemories.length === 0) { timeline.innerHTML = '<p class="text-gray-400 text-center mt-10 text-sm pl-4">寫下這間房間的第一筆紀錄吧！</p>'; return; } currentMemories.forEach((mem, idx) => { const div = document.createElement('div'); div.className = `relative pl-8 sm:pl-10 fade-in`; div.style.animationDelay = `${idx * 0.05}s`; div.innerHTML = `<div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-sky-300 border-2 border-white ring-4 ring-sky-50"></div><div class="glass-card p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group relative border border-white/60"><div class="flex justify-between items-center border-b border-sky-50 pb-3 mb-3"><div><span class="text-sm font-bold text-sky-500">${mem.date}</span><span class="text-xs bg-white text-purple-400 py-1 px-3 rounded-full shadow-sm font-medium ml-2">${mem.author}</span></div><button onclick="openEdit(${idx})" class="text-sky-200 hover:text-purple-400 transition-colors p-1"><i class="fa-solid fa-pen"></i></button></div><p class="text-gray-600 whitespace-pre-wrap leading-relaxed">${mem.content}</p></div>`; timeline.appendChild(div); }); } }
-        document.getElementById('edit-memory-form').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`/memories/${currentRoomId}/${editingMemoryId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ date: document.getElementById('edit-mem-date').value, content: document.getElementById('edit-mem-content').value }) }); closeModal('edit-modal'); fetchMemories(); });
+
+        // 【更新防護與新功能】撈取回憶時判斷權限，並加上刪除按鈕
+        async function fetchMemories() { 
+            const res = await fetch(`/memories/${currentRoomId}`, { headers: { 'Authorization': `Bearer ${token}` } }); 
+            if (res.ok) { 
+                currentMemories = await res.json(); 
+                const timeline = document.getElementById('timeline'); timeline.innerHTML = ''; 
+                if(currentMemories.length === 0) { timeline.innerHTML = '<p class="text-gray-400 text-center mt-10 text-sm pl-4">寫下這間房間的第一筆紀錄吧！</p>'; return; } 
+                
+                currentMemories.forEach((mem, idx) => { 
+                    // 檢查這篇是不是當下登入的使用者寫的
+                    const isAuthor = mem.author === token; 
+                    
+                    // 只有作者自己才能看到這兩個按鈕
+                    let actionButtons = '';
+                    if (isAuthor) {
+                        actionButtons = `
+                            <div class="flex gap-2">
+                                <button onclick="openEdit(${idx})" class="text-sky-200 hover:text-purple-400 transition-colors p-1" title="修改"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteMemory(${mem.id})" class="text-sky-200 hover:text-red-400 transition-colors p-1" title="刪除"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        `;
+                    }
+
+                    const div = document.createElement('div'); div.className = `relative pl-8 sm:pl-10 fade-in`; div.style.animationDelay = `${idx * 0.05}s`; 
+                    div.innerHTML = `
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-sky-300 border-2 border-white ring-4 ring-sky-50"></div>
+                        <div class="glass-card p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group relative border border-white/60">
+                            <div class="flex justify-between items-center border-b border-sky-50 pb-3 mb-3">
+                                <div><span class="text-sm font-bold text-sky-500">${mem.date}</span><span class="text-xs bg-white text-purple-400 py-1 px-3 rounded-full shadow-sm font-medium ml-2">${mem.author}</span></div>
+                                ${actionButtons}
+                            </div>
+                            <p class="text-gray-600 whitespace-pre-wrap leading-relaxed">${mem.content}</p>
+                        </div>
+                    `; 
+                    timeline.appendChild(div); 
+                }); 
+            } 
+        }
+
+        document.getElementById('edit-memory-form').addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            const res = await fetch(`/memories/${currentRoomId}/${editingMemoryId}`, { 
+                method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ date: document.getElementById('edit-mem-date').value, content: document.getElementById('edit-mem-content').value }) 
+            }); 
+            if (res.ok) { closeModal('edit-modal'); fetchMemories(); } else { const data = await res.json(); alert(data.detail); }
+        });
+
+        // 【全新功能】呼叫後端刪除 API
+        async function deleteMemory(memoryId) {
+            if (!confirm("確定要刪除這筆回憶嗎？刪除後就無法恢復囉！")) return;
+            
+            const res = await fetch(`/memories/${currentRoomId}/${memoryId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                fetchMemories(); // 刪除成功後重新載入列表
+            } else {
+                const data = await res.json();
+                alert(data.detail);
+            }
+        }
 
         // --- 共用 Modal 控制 ---
         function openModal(id) { const m = document.getElementById(id); m.classList.remove('hidden'); setTimeout(()=>m.classList.remove('opacity-0'),10); }
