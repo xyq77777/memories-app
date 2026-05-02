@@ -27,23 +27,21 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 class Base(DeclarativeBase):
     pass
 
-# --- 【全新設計】資料庫模型 ---
+# --- 資料庫模型 ---
 class DBUser(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
-    # 移除了原本的 room_id 和 link_code，因為現在一個人可以有很多房間
 
 class DBRoom(Base):
     __tablename__ = "rooms"
-    id = Column(String, primary_key=True, index=True) # 房間專屬ID
-    name = Column(String) # 房間名稱 (例如: 與小明的回憶)
-    link_code = Column(String, unique=True, index=True) # 這個房間專屬的邀請碼
+    id = Column(String, primary_key=True, index=True) 
+    name = Column(String) 
+    link_code = Column(String, unique=True, index=True) 
     start_date = Column(Date, nullable=True)
     meetup_count = Column(Integer, default=0)
 
-# 關聯表：紀錄「誰」加入了「哪個房間」
 class DBUserRoom(Base):
     __tablename__ = "user_rooms"
     id = Column(Integer, primary_key=True, index=True)
@@ -58,8 +56,6 @@ class DBMemory(Base):
     content = Column(String)
     author = Column(String)
 
-Base.metadata.create_all(bind=engine)
-
 # --- 密碼與驗證 ---
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -68,6 +64,11 @@ def verify_password(plain_password, hashed_password): return get_password_hash(p
 def generate_code(): return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 app = FastAPI(title="Multi-Room Shared Memory API")
+
+# 【終極修復】在伺服器啟動時，強制再次檢查並建立所有表格
+@app.on_event("startup")
+def startup_event():
+    Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
@@ -90,19 +91,19 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 # --- API 路由 ---
 @app.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
+    # 【雙重保險】如果表格真的沒建成功，這裡再強制建一次
+    Base.metadata.create_all(bind=engine)
+    
     if db.query(DBUser).filter(DBUser.username == user.username).first():
         raise HTTPException(status_code=400, detail="帳號已存在")
     
-    # 建立新使用者
     new_user = DBUser(username=user.username, hashed_password=get_password_hash(user.password))
     db.add(new_user)
     
-    # 註冊時自動發配一個「個人專屬房間」
     room_id = uuid.uuid4().hex
     new_room = DBRoom(id=room_id, name="我的個人隨筆", link_code=generate_code())
     db.add(new_room)
     
-    # 把使用者跟新房間綁定
     db.add(DBUserRoom(username=user.username, room_id=room_id))
     db.commit()
     return {"msg": "註冊成功！"}
@@ -114,13 +115,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         raise HTTPException(status_code=400, detail="帳號或密碼錯誤")
     return {"access_token": user.username, "token_type": "bearer"}
 
-# --- 【新增】大廳與房間 API ---
 @app.get("/rooms")
 def get_my_rooms(current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    # 找出該使用者加入的所有房間ID
     user_rooms = db.query(DBUserRoom).filter(DBUserRoom.username == current_user.username).all()
     room_ids = [ur.room_id for ur in user_rooms]
-    # 抓出這些房間的詳細資料
     rooms = db.query(DBRoom).filter(DBRoom.id.in_(room_ids)).all()
     return rooms
 
@@ -138,7 +136,6 @@ def join_room(data: JoinRoom, current_user: DBUser = Depends(get_current_user), 
     target_room = db.query(DBRoom).filter(DBRoom.link_code == data.code).first()
     if not target_room: raise HTTPException(status_code=404, detail="找不到此房間代碼")
     
-    # 檢查是否已經在房間內
     exists = db.query(DBUserRoom).filter(DBUserRoom.username == current_user.username, DBUserRoom.room_id == target_room.id).first()
     if exists: raise HTTPException(status_code=400, detail="你已經在這個房間裡囉！")
     
