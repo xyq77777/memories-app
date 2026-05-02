@@ -69,7 +69,7 @@ app = FastAPI(title="Multi-Room Shared Memory API")
 @app.on_event("startup")
 def startup_event():
     # 加入這行：無情拆除所有舊表格 (猛藥！)
-    Base.metadata.drop_all(bind=engine) 
+    #Base.metadata.drop_all(bind=engine) 
     
     # 原本的這行：重新建立符合最新設計圖的表格
     Base.metadata.create_all(bind=engine)
