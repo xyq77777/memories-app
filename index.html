@@ -47,34 +47,42 @@
                 </div>
             </div>
 
-            <!-- 【新增】兩人專屬儀表板 -->
-            <div class="glass-card rounded-3xl shadow-md p-5 mb-8 border border-white/60 flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden">
-                <button onclick="openRoomSettings()" class="absolute top-3 right-4 text-pink-200 hover:text-pink-500 transition-colors" title="設定紀念日"><i class="fa-solid fa-gear fa-lg"></i></button>
+<!-- 【新增】兩人專屬儀表板 -->
+            <div class="glass-card rounded-3xl shadow-md p-5 mb-8 border border-white/60 relative overflow-hidden">
+                <button onclick="openRoomSettings()" class="absolute top-3 right-4 text-pink-200 hover:text-pink-500 transition-colors z-10" title="設定紀念日"><i class="fa-solid fa-gear fa-lg"></i></button>
                 
-                <div class="flex items-center gap-4 w-full justify-center md:justify-start pt-2">
-                    <div class="bg-gradient-to-br from-pink-100 to-rose-100 p-4 rounded-full text-pink-500 shadow-inner">
-                        <!-- 這裡換成了絕對不會出錯的 日曆打勾 圖示 -->
-                        <i class="fa-solid fa-calendar-check fa-2x"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-bold tracking-wide">認識 / 在一起</p>
-                        <p class="text-3xl font-black text-pink-600 drop-shadow-sm"><span id="days-count">--</span> <span class="text-sm text-pink-400 font-medium">天</span></p>
-                    </div>
-                </div>
-                
-                <div class="w-full h-px bg-pink-100 md:hidden"></div> <!-- 手機版分隔線 -->
-
-                <div class="flex items-center gap-4 w-full justify-center md:justify-end pb-2">
-                    <div class="bg-gradient-to-br from-purple-100 to-indigo-100 p-4 rounded-full text-purple-500 shadow-inner">
-                        <i class="fa-solid fa-face-smile-wink fa-2x"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-bold tracking-wide">我們見面了</p>
-                        <div class="flex items-center gap-3">
-                            <p class="text-3xl font-black text-purple-600 drop-shadow-sm"><span id="meetup-count">--</span> <span class="text-sm text-purple-400 font-medium">次</span></p>
-                            <button onclick="addMeetup()" class="bg-purple-500 hover:bg-purple-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold shadow-md transition-transform hover:scale-110" title="見面次數 +1"><i class="fa-solid fa-plus text-xs"></i></button>
+                <!-- 使用 w-fit mx-auto 讓區塊在手機版能完美靠左對齊，同時整體畫面居中 -->
+                <div class="flex flex-col md:flex-row justify-between w-fit md:w-full mx-auto md:mx-0 gap-4 md:gap-0 pt-2 pb-1">
+                    
+                    <!-- 項目一：天數 -->
+                    <div class="flex items-center gap-4 justify-start">
+                        <!-- 固定圓形寬高 w-14 h-14 確保上下圖示絕對對齊 -->
+                        <div class="bg-gradient-to-br from-pink-100 to-rose-100 w-14 h-14 rounded-full text-pink-500 shadow-inner flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-calendar-check text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-bold tracking-wide">認識 / 在一起</p>
+                            <p class="text-3xl font-black text-pink-600 drop-shadow-sm"><span id="days-count">--</span> <span class="text-sm text-pink-400 font-medium">天</span></p>
                         </div>
                     </div>
+                    
+                    <div class="w-full h-px bg-pink-100 md:hidden"></div> <!-- 手機版分隔線 -->
+
+                    <!-- 項目二：見面次數 -->
+                    <div class="flex items-center gap-4 justify-start md:justify-end">
+                        <!-- 固定圓形寬高 w-14 h-14 確保上下圖示絕對對齊 -->
+                        <div class="bg-gradient-to-br from-purple-100 to-indigo-100 w-14 h-14 rounded-full text-purple-500 shadow-inner flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-face-smile-wink text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-bold tracking-wide">我們見面了</p>
+                            <div class="flex items-center gap-3">
+                                <p class="text-3xl font-black text-purple-600 drop-shadow-sm"><span id="meetup-count">--</span> <span class="text-sm text-purple-400 font-medium">次</span></p>
+                                <button onclick="addMeetup()" class="bg-purple-500 hover:bg-purple-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold shadow-md transition-transform hover:scale-110" title="見面次數 +1"><i class="fa-solid fa-plus text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
