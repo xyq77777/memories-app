@@ -36,26 +36,20 @@
             <div class="mt-6 text-center border-t border-sky-100 pt-4"><button id="toggle-auth" class="text-sky-500 hover:text-purple-500 text-sm font-medium"><i class="fa-solid fa-user-plus mr-1"></i> 還沒有帳號？點此註冊</button></div>
         </div>
 
-        <!-- 【全新】房間大廳區塊 -->
+        <!-- 房間大廳區塊 -->
         <div id="lobby-section" class="hidden fade-in">
             <div class="flex justify-between items-center mb-6 glass-card py-3 px-5 rounded-2xl shadow-sm border border-white/60">
                 <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-purple-500"><i class="fa-solid fa-layer-group mr-2 text-sky-400"></i>選擇房間</h1>
                 <button onclick="logout()" class="text-sm bg-white/50 text-gray-500 hover:bg-white py-1.5 px-3 rounded-full shadow-sm"><i class="fa-solid fa-right-from-bracket"></i> 登出</button>
             </div>
-
-            <!-- 房間列表 -->
-            <div id="room-list" class="space-y-4 mb-6">
-                <!-- 房間卡片會透過 JS 塞進來 -->
-            </div>
-
-            <!-- 建立/加入按鈕 -->
+            <div id="room-list" class="space-y-4 mb-6"></div>
             <div class="flex gap-3">
                 <button onclick="openCreateRoomModal()" class="flex-1 bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-3 rounded-2xl shadow-sm transition-all"><i class="fa-solid fa-plus mr-1"></i> 建立新房間</button>
                 <button onclick="openJoinRoomModal()" class="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold py-3 rounded-2xl shadow-sm transition-all"><i class="fa-solid fa-key mr-1"></i> 輸入代碼加入</button>
             </div>
         </div>
 
-        <!-- 原本的房間主畫面區塊 (加上了返回大廳按鈕) -->
+        <!-- 房間主畫面區塊 -->
         <div id="main-section" class="hidden fade-in">
             <div class="flex justify-between items-center mb-6 glass-card py-3 px-4 rounded-2xl shadow-sm border border-white/60">
                 <button onclick="backToLobby()" class="text-sky-500 hover:text-sky-700 bg-white/50 p-2 rounded-full w-9 h-9 flex items-center justify-center mr-2"><i class="fa-solid fa-arrow-left"></i></button>
@@ -100,129 +94,66 @@
     </div>
 
     <!-- 視窗群 (Modals) -->
-    <!-- 建立房間 -->
     <div id="create-room-modal" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity"><div class="glass-card bg-white/90 w-full max-w-sm rounded-3xl p-6 shadow-xl"><h3 class="text-xl font-bold mb-4 text-sky-500">建立新房間</h3><input type="text" id="new-room-name" placeholder="房間名稱 (例如: 跟阿呆的旅遊日記)" class="w-full rounded-xl border border-sky-100 p-3 outline-none focus:ring-2 focus:ring-sky-300 mb-4"><div class="flex gap-3"><button onclick="closeModal('create-room-modal')" class="flex-1 bg-gray-100 text-gray-600 font-bold py-2.5 rounded-xl">取消</button><button onclick="submitCreateRoom()" class="flex-1 bg-sky-400 text-white font-bold py-2.5 rounded-xl">建立</button></div></div></div>
-    
-    <!-- 加入房間 -->
     <div id="join-room-modal" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity"><div class="glass-card bg-white/90 w-full max-w-sm rounded-3xl p-6 shadow-xl"><h3 class="text-xl font-bold mb-4 text-purple-500">輸入房間代碼</h3><input type="text" id="join-room-code" placeholder="請輸入6碼" maxlength="6" class="uppercase w-full rounded-xl border border-purple-100 p-3 text-center text-lg font-mono outline-none focus:ring-2 focus:ring-purple-300 mb-4"><div class="flex gap-3"><button onclick="closeModal('join-room-modal')" class="flex-1 bg-gray-100 text-gray-600 font-bold py-2.5 rounded-xl">取消</button><button onclick="submitJoinRoom()" class="flex-1 bg-purple-400 text-white font-bold py-2.5 rounded-xl">加入</button></div></div></div>
-
-    <!-- 顯示邀請碼 (在房間內點擊) -->
     <div id="link-modal" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity"><div class="glass-card bg-white/90 w-full max-w-sm rounded-3xl p-6 shadow-xl text-center"><h3 class="text-xl font-bold mb-4 text-sky-500">邀請朋友加入</h3><p class="text-sm text-gray-500 mb-2">本房間的專屬代碼：</p><div id="room-link-code-display" class="text-4xl font-mono font-black text-purple-500 tracking-widest mb-6 bg-purple-50 p-4 rounded-xl">------</div><button onclick="closeModal('link-modal')" class="w-full bg-gray-100 text-gray-600 font-bold py-2.5 rounded-xl">關閉</button></div></div>
-    
-    <!-- 修改與設定 (與之前相同) -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity"><div class="glass-card bg-white/90 w-full max-w-sm rounded-3xl p-6 shadow-xl" id="edit-modal-content"><h3 class="text-xl font-bold mb-4 text-purple-500"><i class="fa-solid fa-pen-to-square mr-2"></i>修改回憶</h3><form id="edit-memory-form" class="space-y-4"><input type="date" id="edit-mem-date" class="block w-full rounded-xl border border-purple-100 p-3 text-gray-500 outline-none" required><textarea id="edit-mem-content" rows="4" class="block w-full rounded-xl border border-purple-100 p-3 text-gray-600 outline-none resize-none" required></textarea><div class="flex gap-3 pt-2"><button type="button" onclick="closeModal('edit-modal')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl transition-all">取消</button><button type="submit" class="flex-1 bg-gradient-to-r from-sky-400 to-purple-400 text-white font-bold py-2.5 rounded-xl shadow-sm transition-all">儲存修改</button></div></form></div></div>
     <div id="room-settings-modal" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300"><div class="glass-card bg-white/90 w-full max-w-sm rounded-3xl p-6 shadow-xl" id="room-settings-modal-content"><h3 class="text-xl font-bold mb-4 text-sky-500"><i class="fa-solid fa-heart mr-2"></i>設定專屬資料</h3><form id="room-settings-form" class="space-y-4"><div><label class="block text-sm font-bold text-gray-600 mb-1">設定紀念日 / 認識日</label><input type="date" id="setting-start-date" class="block w-full rounded-xl border border-sky-100 p-3 text-gray-500 outline-none"></div><div><label class="block text-sm font-bold text-gray-600 mb-1">手動修改見面次數</label><input type="number" id="setting-meetup-count" class="block w-full rounded-xl border border-purple-100 p-3 text-gray-500 outline-none" min="0"></div><div class="flex gap-3 pt-2"><button type="button" onclick="closeModal('room-settings-modal')" class="flex-1 bg-gray-100 text-gray-600 font-bold py-2.5 rounded-xl">取消</button><button type="submit" class="flex-1 bg-gradient-to-r from-sky-400 to-purple-400 text-white font-bold py-2.5 rounded-xl">儲存設定</button></div></form></div></div>
 
     <script>
         let isLogin = true; let token = localStorage.getItem('token'); 
-        let currentRoomId = null; let currentRoomCode = null; // 紀錄目前在哪個房間
+        let currentRoomId = null; let currentRoomCode = null; 
         let currentMemories = []; let editingMemoryId = null; let roomStartDate = null; let roomMeetupCount = 0;
 
         if (token) { showLobby(); }
 
-        // --- 登入與註冊 ---
+        // --- 登入與註冊 (已新增抓錯代碼) ---
         function toggleMode() { isLogin = !isLogin; document.getElementById('auth-title').innerText = isLogin ? '登入' : '註冊新帳號'; document.getElementById('toggle-auth').innerHTML = isLogin ? '還沒有帳號？點此註冊' : '已有帳號？返回登入'; const confirmGroup = document.getElementById('confirm-password-group'); const confirmInput = document.getElementById('confirm-password'); if (isLogin) { confirmGroup.classList.add('hidden'); confirmInput.required = false; } else { confirmGroup.classList.remove('hidden'); confirmInput.required = true; } }
         document.getElementById('toggle-auth').addEventListener('click', toggleMode);
+        
         document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value.trim(); const password = document.getElementById('password').value;
             if (!isLogin) {
                 if (password !== document.getElementById('confirm-password').value) return alert('兩次密碼不同！');
-                const res = await fetch('/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
-                if (res.ok) { alert('註冊成功！系統已為您建立個人專屬房間。'); document.getElementById('auth-form').reset(); toggleMode(); } else { alert('註冊失敗'); }
+                try {
+                    const res = await fetch('/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+                    if (res.ok) { 
+                        alert('註冊成功！系統已為您建立個人專屬房間。'); 
+                        document.getElementById('auth-form').reset(); toggleMode(); 
+                    } else { 
+                        // 這裡會把後端真正的錯誤抓出來顯示
+                        const data = await res.json(); 
+                        alert('註冊失敗 ❌\n錯誤原因：' + (data.detail || '系統異常')); 
+                    }
+                } catch(error) {
+                    alert('網路或伺服器錯誤 ❌\n詳細資訊：' + error.message);
+                }
             } else {
                 const formData = new URLSearchParams(); formData.append('username', username); formData.append('password', password);
-                const res = await fetch('/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
-                if (res.ok) { const data = await res.json(); localStorage.setItem('token', data.access_token); token = data.access_token; showLobby(); } else { alert('帳號或密碼錯誤'); }
+                try {
+                    const res = await fetch('/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
+                    if (res.ok) { const data = await res.json(); localStorage.setItem('token', data.access_token); token = data.access_token; showLobby(); } else { alert('帳號或密碼錯誤'); }
+                } catch(error) {
+                    alert('網路或伺服器錯誤 ❌\n詳細資訊：' + error.message);
+                }
             }
         });
 
-        // --- 大廳邏輯 (Lobby) ---
-        function showLobby() {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('main-section').classList.add('hidden');
-            document.getElementById('lobby-section').classList.remove('hidden');
-            currentRoomId = null;
-            fetchRooms();
-        }
+        // --- 大廳邏輯 ---
+        function showLobby() { document.getElementById('auth-section').classList.add('hidden'); document.getElementById('main-section').classList.add('hidden'); document.getElementById('lobby-section').classList.remove('hidden'); currentRoomId = null; fetchRooms(); }
+        async function fetchRooms() { const res = await fetch('/rooms', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const rooms = await res.json(); const list = document.getElementById('room-list'); list.innerHTML = ''; rooms.forEach(room => { const div = document.createElement('div'); div.className = "glass-card p-4 rounded-2xl flex justify-between items-center cursor-pointer hover:bg-white/50 transition-all shadow-sm group border border-white/60"; div.onclick = () => enterRoom(room.id, room.name, room.link_code); div.innerHTML = `<div class="flex items-center gap-3"><div class="bg-gradient-to-br from-sky-100 to-purple-100 w-10 h-10 rounded-full flex items-center justify-center text-sky-500 group-hover:scale-110 transition-transform"><i class="fa-solid fa-door-open"></i></div><span class="font-bold text-gray-700">${room.name}</span></div><i class="fa-solid fa-chevron-right text-gray-300 group-hover:text-sky-400"></i>`; list.appendChild(div); }); } else { logout(); } }
+        async function submitCreateRoom() { const name = document.getElementById('new-room-name').value.trim(); if(!name) return alert("請輸入房間名稱"); const res = await fetch('/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ name }) }); if(res.ok) { closeModal('create-room-modal'); fetchRooms(); } }
+        async function submitJoinRoom() { const code = document.getElementById('join-room-code').value.trim(); if(!code) return alert("請輸入代碼"); const res = await fetch('/join_room', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ code: code.toUpperCase() }) }); if(res.ok) { alert("成功加入！"); closeModal('join-room-modal'); fetchRooms(); } else { const data = await res.json(); alert(data.detail); } }
 
-        async function fetchRooms() {
-            const res = await fetch('/rooms', { headers: { 'Authorization': `Bearer ${token}` } });
-            if (res.ok) {
-                const rooms = await res.json();
-                const list = document.getElementById('room-list'); list.innerHTML = '';
-                rooms.forEach(room => {
-                    const div = document.createElement('div');
-                    div.className = "glass-card p-4 rounded-2xl flex justify-between items-center cursor-pointer hover:bg-white/50 transition-all shadow-sm group border border-white/60";
-                    div.onclick = () => enterRoom(room.id, room.name, room.link_code);
-                    div.innerHTML = `
-                        <div class="flex items-center gap-3"><div class="bg-gradient-to-br from-sky-100 to-purple-100 w-10 h-10 rounded-full flex items-center justify-center text-sky-500 group-hover:scale-110 transition-transform"><i class="fa-solid fa-door-open"></i></div><span class="font-bold text-gray-700">${room.name}</span></div>
-                        <i class="fa-solid fa-chevron-right text-gray-300 group-hover:text-sky-400"></i>
-                    `;
-                    list.appendChild(div);
-                });
-            } else { logout(); }
-        }
-
-        async function submitCreateRoom() {
-            const name = document.getElementById('new-room-name').value.trim();
-            if(!name) return alert("請輸入房間名稱");
-            const res = await fetch('/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ name }) });
-            if(res.ok) { closeModal('create-room-modal'); fetchRooms(); }
-        }
-
-        async function submitJoinRoom() {
-            const code = document.getElementById('join-room-code').value.trim();
-            if(!code) return alert("請輸入代碼");
-            const res = await fetch('/join_room', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ code: code.toUpperCase() }) });
-            if(res.ok) { alert("成功加入！"); closeModal('join-room-modal'); fetchRooms(); } else { const data = await res.json(); alert(data.detail); }
-        }
-
-        // --- 房間內邏輯 (Room) ---
-        function enterRoom(id, name, code) {
-            currentRoomId = id; currentRoomCode = code;
-            document.getElementById('room-title-display').innerText = name;
-            document.getElementById('lobby-section').classList.add('hidden');
-            document.getElementById('main-section').classList.remove('hidden');
-            document.getElementById('mem-date').valueAsDate = new Date();
-            fetchRoomInfo(); fetchMemories();
-        }
-
+        // --- 房間內邏輯 ---
+        function enterRoom(id, name, code) { currentRoomId = id; currentRoomCode = code; document.getElementById('room-title-display').innerText = name; document.getElementById('lobby-section').classList.add('hidden'); document.getElementById('main-section').classList.remove('hidden'); document.getElementById('mem-date').valueAsDate = new Date(); fetchRoomInfo(); fetchMemories(); }
         function backToLobby() { showLobby(); }
-
-        // 修改 API 呼叫，現在都要加上 currentRoomId
-        async function fetchRoomInfo() {
-            const res = await fetch(`/room_info/${currentRoomId}`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (res.ok) {
-                const data = await res.json(); roomStartDate = data.start_date; roomMeetupCount = data.meetup_count; document.getElementById('meetup-count').innerText = roomMeetupCount;
-                const daysElem = document.getElementById('days-count');
-                if (!roomStartDate) { daysElem.innerText = "設定"; daysElem.classList.add('text-lg', 'text-sky-300'); } 
-                else {
-                    daysElem.classList.remove('text-lg', 'text-sky-300');
-                    const diffTime = new Date() - new Date(roomStartDate).setHours(0,0,0,0); 
-                    daysElem.innerText = Math.max(1, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1); 
-                }
-            }
-        }
-
+        async function fetchRoomInfo() { const res = await fetch(`/room_info/${currentRoomId}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const data = await res.json(); roomStartDate = data.start_date; roomMeetupCount = data.meetup_count; document.getElementById('meetup-count').innerText = roomMeetupCount; const daysElem = document.getElementById('days-count'); if (!roomStartDate) { daysElem.innerText = "設定"; daysElem.classList.add('text-lg', 'text-sky-300'); } else { daysElem.classList.remove('text-lg', 'text-sky-300'); const diffTime = new Date() - new Date(roomStartDate).setHours(0,0,0,0); daysElem.innerText = Math.max(1, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1); } } }
         async function saveRoomInfo(startDate, count) { await fetch(`/room_info/${currentRoomId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ start_date: startDate || null, meetup_count: count }) }); fetchRoomInfo(); }
         function addMeetup() { saveRoomInfo(roomStartDate, roomMeetupCount + 1); }
-
         document.getElementById('memory-form').addEventListener('submit', async (e) => { e.preventDefault(); const date = document.getElementById('mem-date').value; const content = document.getElementById('mem-content').value; const res = await fetch(`/memories/${currentRoomId}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ date, content }) }); if (res.ok) { document.getElementById('mem-content').value = ''; fetchMemories(); } });
-
-        async function fetchMemories() {
-            const res = await fetch(`/memories/${currentRoomId}`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (res.ok) {
-                currentMemories = await res.json(); const timeline = document.getElementById('timeline'); timeline.innerHTML = '';
-                if(currentMemories.length === 0) { timeline.innerHTML = '<p class="text-gray-400 text-center mt-10 text-sm pl-4">寫下這間房間的第一筆紀錄吧！</p>'; return; }
-                currentMemories.forEach((mem, idx) => {
-                    const div = document.createElement('div'); div.className = `relative pl-8 sm:pl-10 fade-in`; div.style.animationDelay = `${idx * 0.05}s`;
-                    div.innerHTML = `<div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-sky-300 border-2 border-white ring-4 ring-sky-50"></div><div class="glass-card p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group relative border border-white/60"><div class="flex justify-between items-center border-b border-sky-50 pb-3 mb-3"><div><span class="text-sm font-bold text-sky-500">${mem.date}</span><span class="text-xs bg-white text-purple-400 py-1 px-3 rounded-full shadow-sm font-medium ml-2">${mem.author}</span></div><button onclick="openEdit(${idx})" class="text-sky-200 hover:text-purple-400 transition-colors p-1"><i class="fa-solid fa-pen"></i></button></div><p class="text-gray-600 whitespace-pre-wrap leading-relaxed">${mem.content}</p></div>`;
-                    timeline.appendChild(div);
-                });
-            }
-        }
-
+        async function fetchMemories() { const res = await fetch(`/memories/${currentRoomId}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { currentMemories = await res.json(); const timeline = document.getElementById('timeline'); timeline.innerHTML = ''; if(currentMemories.length === 0) { timeline.innerHTML = '<p class="text-gray-400 text-center mt-10 text-sm pl-4">寫下這間房間的第一筆紀錄吧！</p>'; return; } currentMemories.forEach((mem, idx) => { const div = document.createElement('div'); div.className = `relative pl-8 sm:pl-10 fade-in`; div.style.animationDelay = `${idx * 0.05}s`; div.innerHTML = `<div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-sky-300 border-2 border-white ring-4 ring-sky-50"></div><div class="glass-card p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group relative border border-white/60"><div class="flex justify-between items-center border-b border-sky-50 pb-3 mb-3"><div><span class="text-sm font-bold text-sky-500">${mem.date}</span><span class="text-xs bg-white text-purple-400 py-1 px-3 rounded-full shadow-sm font-medium ml-2">${mem.author}</span></div><button onclick="openEdit(${idx})" class="text-sky-200 hover:text-purple-400 transition-colors p-1"><i class="fa-solid fa-pen"></i></button></div><p class="text-gray-600 whitespace-pre-wrap leading-relaxed">${mem.content}</p></div>`; timeline.appendChild(div); }); } }
         document.getElementById('edit-memory-form').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`/memories/${currentRoomId}/${editingMemoryId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ date: document.getElementById('edit-mem-date').value, content: document.getElementById('edit-mem-content').value }) }); closeModal('edit-modal'); fetchMemories(); });
 
         // --- 共用 Modal 控制 ---
@@ -233,9 +164,7 @@
         function openLinkModal() { document.getElementById('room-link-code-display').innerText = currentRoomCode; openModal('link-modal'); }
         function openRoomSettings() { document.getElementById('setting-start-date').value = roomStartDate || ''; document.getElementById('setting-meetup-count').value = roomMeetupCount; openModal('room-settings-modal'); }
         function openEdit(idx) { const m = currentMemories[idx]; editingMemoryId = m.id; document.getElementById('edit-mem-date').value = m.date; document.getElementById('edit-mem-content').value = m.content; openModal('edit-modal'); }
-        
         document.getElementById('room-settings-form').addEventListener('submit', (e) => { e.preventDefault(); saveRoomInfo(document.getElementById('setting-start-date').value, parseInt(document.getElementById('setting-meetup-count').value) || 0); closeModal('room-settings-modal'); });
-
         function logout() { localStorage.removeItem('token'); token = null; document.getElementById('lobby-section').classList.add('hidden'); document.getElementById('main-section').classList.add('hidden'); document.getElementById('auth-section').classList.remove('hidden'); }
     </script>
 </body>
