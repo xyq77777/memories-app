@@ -65,13 +65,9 @@ def generate_code(): return ''.join(random.choices(string.ascii_uppercase + stri
 
 app = FastAPI(title="Multi-Room Shared Memory API")
 
-# 【終極修復】在伺服器啟動時，強制拆除並重建表格
 @app.on_event("startup")
 def startup_event():
-    # 加入這行：無情拆除所有舊表格 (猛藥！)
-    #Base.metadata.drop_all(bind=engine) 
-    
-    # 原本的這行：重新建立符合最新設計圖的表格
+    # 已經拿掉 drop_all，現在只會安全地建立表格
     Base.metadata.create_all(bind=engine)
 
 def get_db():
@@ -95,19 +91,13 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 # --- API 路由 ---
 @app.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    # 【雙重保險】如果表格真的沒建成功，這裡再強制建一次
-    Base.metadata.create_all(bind=engine)
-    
     if db.query(DBUser).filter(DBUser.username == user.username).first():
         raise HTTPException(status_code=400, detail="帳號已存在")
-    
     new_user = DBUser(username=user.username, hashed_password=get_password_hash(user.password))
     db.add(new_user)
-    
     room_id = uuid.uuid4().hex
     new_room = DBRoom(id=room_id, name="我的個人隨筆", link_code=generate_code())
     db.add(new_room)
-    
     db.add(DBUserRoom(username=user.username, room_id=room_id))
     db.commit()
     return {"msg": "註冊成功！"}
@@ -123,8 +113,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 def get_my_rooms(current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
     user_rooms = db.query(DBUserRoom).filter(DBUserRoom.username == current_user.username).all()
     room_ids = [ur.room_id for ur in user_rooms]
-    rooms = db.query(DBRoom).filter(DBRoom.id.in_(room_ids)).all()
-    return rooms
+    return db.query(DBRoom).filter(DBRoom.id.in_(room_ids)).all()
 
 @app.post("/rooms")
 def create_room(room: RoomCreate, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -139,10 +128,8 @@ def create_room(room: RoomCreate, current_user: DBUser = Depends(get_current_use
 def join_room(data: JoinRoom, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
     target_room = db.query(DBRoom).filter(DBRoom.link_code == data.code).first()
     if not target_room: raise HTTPException(status_code=404, detail="找不到此房間代碼")
-    
     exists = db.query(DBUserRoom).filter(DBUserRoom.username == current_user.username, DBUserRoom.room_id == target_room.id).first()
     if exists: raise HTTPException(status_code=400, detail="你已經在這個房間裡囉！")
-    
     db.add(DBUserRoom(username=current_user.username, room_id=target_room.id))
     db.commit()
     return {"msg": "成功加入房間！"}
@@ -171,14 +158,30 @@ def create_memory(room_id: str, memory: MemoryCreate, current_user: DBUser = Dep
 def get_memories(room_id: str, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(DBMemory).filter(DBMemory.room_id == room_id).order_by(DBMemory.date.desc()).all()
 
+# 【新增防護】修改紀錄：加上本人驗證
 @app.put("/memories/{room_id}/{memory_id}")
 def update_memory(room_id: str, memory_id: int, memory: MemoryUpdate, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
     db_memory = db.query(DBMemory).filter(DBMemory.id == memory_id, DBMemory.room_id == room_id).first()
     if not db_memory: raise HTTPException(status_code=404, detail="找不到這筆紀錄")
+    if db_memory.author != current_user.username: 
+        raise HTTPException(status_code=403, detail="權限不足：只能修改自己寫的回憶喔！")
+    
     db_memory.date = memory.date
     db_memory.content = memory.content
     db.commit()
     return {"msg": "紀錄已修改"}
+
+# 【全新功能】刪除紀錄：加上本人驗證
+@app.delete("/memories/{room_id}/{memory_id}")
+def delete_memory(room_id: str, memory_id: int, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_memory = db.query(DBMemory).filter(DBMemory.id == memory_id, DBMemory.room_id == room_id).first()
+    if not db_memory: raise HTTPException(status_code=404, detail="找不到這筆紀錄")
+    if db_memory.author != current_user.username: 
+        raise HTTPException(status_code=403, detail="權限不足：只能刪除自己寫的回憶喔！")
+    
+    db.delete(db_memory)
+    db.commit()
+    return {"msg": "紀錄已刪除"}
 
 @app.get("/")
 def serve_home():
